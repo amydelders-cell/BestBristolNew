@@ -93,9 +93,10 @@ export class SolarSystem {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 0.5;
+    this.controls.minDistance = 0.02;     // very close-in zoom for tiny dwarfs
     this.controls.maxDistance = 500;
     this.controls.target.set(0, 0, 0);
+    this.followTarget = null;             // body the camera is locked onto
   }
 
   _initRaycaster() {
@@ -445,29 +446,35 @@ export class SolarSystem {
     if (!entry) return;
     const target = new THREE.Vector3();
     entry.object3D.getWorldPosition(target);
-    // worldspace -> root local
-    this.root.worldToLocal(target);
-    const radius = entry.radius || SUN_RENDER_RADIUS;
-    const offset = new THREE.Vector3(0, radius * 2.5, radius * 6.5);
+    const radius = (entry.radius || SUN_RENDER_RADIUS) * (entry.object3D.scale.x || 1);
+    // Closer offset so dwarfs / moons fill the view
+    const offset = new THREE.Vector3(0, radius * 1.2, radius * 3.5);
     const camTarget = target.clone().add(offset);
     this._tweenCamera(camTarget, target);
+    // Lock on so the camera follows the body around its orbit
+    this.followTarget = entry;
   }
 
-  _tweenCamera(toPos, toTarget, dur = 1.0) {
+  releaseFollow() { this.followTarget = null; }
+
+  _tweenCamera(toPos, toTarget, dur = 1.0, onDone) {
     const fromPos = this.camera.position.clone();
     const fromTarget = this.controls.target.clone();
     const t0 = performance.now();
+    this._tweening = true;
     const tick = () => {
       const t = Math.min(1, (performance.now() - t0) / (dur * 1000));
       const k = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       this.camera.position.lerpVectors(fromPos, toPos, k);
       this.controls.target.lerpVectors(fromTarget, toTarget, k);
       if (t < 1) requestAnimationFrame(tick);
+      else { this._tweening = false; if (onDone) onDone(); }
     };
     tick();
   }
 
   resetView() {
+    this.followTarget = null;
     this._tweenCamera(new THREE.Vector3(0, 35, 90), new THREE.Vector3(0, 0, 0));
   }
 
@@ -633,6 +640,16 @@ export class SolarSystem {
       entry.object3D.rotation.y += spinPerDay * days * (rotHours < 0 ? -1 : 1);
 
       if (entry.clouds) entry.clouds.rotation.y += spinPerDay * days * 0.3;
+    }
+
+    // Camera follow: keep the OrbitControls target glued to the body and
+    // shift the camera by the same delta so its relative offset is preserved.
+    if (this.followTarget && this.followTarget.object3D && !this._tweening) {
+      const newTarget = new THREE.Vector3();
+      this.followTarget.object3D.getWorldPosition(newTarget);
+      const delta = newTarget.clone().sub(this.controls.target);
+      this.controls.target.copy(newTarget);
+      this.camera.position.add(delta);
     }
 
     // AR hit testing

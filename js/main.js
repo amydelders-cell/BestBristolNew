@@ -122,7 +122,10 @@ function showInfo(id) {
   info.classList.remove('hidden');
 }
 
-sys.onSelect((entry) => showInfo(entry.data.id));
+sys.onSelect((entry) => {
+  showInfo(entry.data.id);
+  sys.jumpTo(entry.data.id); // fly camera in and lock on
+});
 
 // Open Sun info on first load briefly to advertise the feature
 setTimeout(() => showInfo('sun'), 1200);
