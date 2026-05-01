@@ -73,7 +73,7 @@ function ramp(stops, t) {
 
 // --- Texture builder ---------------------------------------------------------
 
-function makeCanvas(w = 1024, h = 512) {
+function makeCanvas(w = 512, h = 256) {
   const cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
   return cv;
@@ -169,14 +169,14 @@ const PALETTES = {
 };
 
 function generateRocky(seed, palette = PALETTES.rocky) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
 
   // crater field — a sparse set of impact basins
   const rand = mulberry32(seed + 7);
   const craters = [];
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < 80; i++) {
     craters.push({
       lon: rand() * Math.PI * 2,
       lat: (rand() - 0.5) * Math.PI,
@@ -211,7 +211,7 @@ function generateRocky(seed, palette = PALETTES.rocky) {
 }
 
 function generateMars(seed) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
   const palette = PALETTES.mars;
@@ -231,7 +231,7 @@ function generateMars(seed) {
 }
 
 function generateVenus(seed) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
   const palette = PALETTES.venusian;
@@ -245,7 +245,7 @@ function generateVenus(seed) {
 }
 
 function generateEarth(seed) {
-  const cv = makeCanvas(2048, 1024);
+  const cv = makeCanvas(768, 384);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
   const p = PALETTES.earth;
@@ -272,7 +272,7 @@ function generateEarth(seed) {
 }
 
 function generateEarthClouds(seed) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const ctx = cv.getContext('2d');
   const noise = makeValueNoise(seed + 999);
   const sn = sphereNoise(noise);
@@ -297,7 +297,7 @@ function generateEarthClouds(seed) {
 }
 
 function generateBanded(seed, palette, opts = {}) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
   paint(cv, (u, v, lon, lat) => {
@@ -335,7 +335,7 @@ function generateBanded(seed, palette, opts = {}) {
 }
 
 function generatePluto(seed) {
-  const cv = makeCanvas(1024, 512);
+  const cv = makeCanvas(384, 192);
   const noise = makeValueNoise(seed);
   const sn = sphereNoise(noise);
   const p = PALETTES.pluto;
@@ -441,7 +441,7 @@ export function buildRingTexture(innerColorHex, outerColorHex, density = 1) {
 // Bright sun colour ramp painted as a fiery surface texture.
 export function buildSunTexture() {
   return getCached('sun', () => {
-    const cv = makeCanvas(1024, 512);
+    const cv = makeCanvas(384, 192);
     const noise = makeValueNoise(nextSeed('sun'));
     const sn = sphereNoise(noise);
     paint(cv, (u, v, lon, lat) => {
@@ -478,7 +478,7 @@ export function buildStarfieldTexture() {
 
     // sprinkle stars
     const rand = mulberry32(31415);
-    for (let i = 0; i < 6000; i++) {
+    for (let i = 0; i < 2500; i++) {
       const x = rand() * w;
       const y = rand() * h;
       const r = Math.pow(rand(), 6) * 1.8 + 0.2;

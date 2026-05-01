@@ -4,13 +4,31 @@ import { allBodies, SUN } from './data.js';
 const canvas = document.getElementById('scene');
 const loading = document.getElementById('loading');
 
-const sys = new SolarSystem(canvas);
-sys.start();
+function showError(msg) {
+  loading.innerHTML = `<div style="max-width:80%;text-align:center;padding:1rem">
+    <h2 style="margin:0 0 0.5rem;color:#ffb84d">Couldn't start the scene</h2>
+    <p style="font-size:0.9rem;line-height:1.4">${msg}</p>
+    <p style="font-size:0.8rem;color:#8a93a8;margin-top:1rem">Try reloading. On older devices, this view needs WebGL — you may need a more recent browser.</p>
+  </div>`;
+}
 
-// Hide loading once first frame ships
-requestAnimationFrame(() => {
-  setTimeout(() => loading.classList.add('gone'), 200);
-});
+let sys;
+try {
+  sys = new SolarSystem(canvas);
+  sys.start();
+} catch (err) {
+  console.error(err);
+  showError(String(err && err.message || err));
+  throw err;
+}
+
+// Hide loading once the first frame ships, with a hard fallback so the
+// user never gets stuck on the spinner.
+let hidden = false;
+const hide = () => { if (!hidden) { hidden = true; loading.classList.add('gone'); } };
+requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(hide, 100)));
+setTimeout(hide, 4000);
+window.addEventListener('error', (e) => { showError(e.message || 'Unknown error'); });
 
 // --- AR ---------------------------------------------------------------------
 const arButton = document.getElementById('ar-button');
