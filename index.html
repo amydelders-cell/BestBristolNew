@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000010" />
+  <title>AR Solar System</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Charting the heavens…</p>
+  </div>
+
+  <header id="topbar">
+    <h1>Solar System AR</h1>
+    <div class="actions">
+      <button id="ar-button" class="primary" disabled>Checking AR…</button>
+      <button id="reset-view" title="Reset view">⟳</button>
+    </div>
+  </header>
+
+  <aside id="controls" class="panel">
+    <div class="row">
+      <label for="speed">Time speed</label>
+      <input type="range" id="speed" min="0" max="1000" value="30" />
+      <span id="speed-readout">30×</span>
+    </div>
+    <div class="row toggles">
+      <label><input type="checkbox" id="toggle-orbits" checked /> Orbits</label>
+      <label><input type="checkbox" id="toggle-labels" checked /> Labels</label>
+      <label><input type="checkbox" id="toggle-realsize" /> Real relative sizes</label>
+      <label><input type="checkbox" id="toggle-stars" checked /> Starfield</label>
+    </div>
+    <div class="row jump">
+      <label for="jump">Jump to</label>
+      <select id="jump"><option value="">— select body —</option></select>
+    </div>
+  </aside>
+
+  <section id="info" class="panel hidden">
+    <button id="info-close" aria-label="Close">×</button>
+    <h2 id="info-name">—</h2>
+    <p id="info-type" class="badge"></p>
+    <dl id="info-stats"></dl>
+    <p id="info-desc"></p>
+  </section>
+
+  <div id="ar-hint" class="hidden">
+    <p>Move your phone slowly to find a flat surface, then tap to place the solar system.</p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
