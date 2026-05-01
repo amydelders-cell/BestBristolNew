@@ -108,7 +108,9 @@ export class SolarSystem {
       const dx = e.clientX - this._pointerDownAt.x;
       const dy = e.clientY - this._pointerDownAt.y;
       const dt = performance.now() - this._pointerDownAt.t;
-      if (dx * dx + dy * dy < 25 && dt < 400) this._handleClick(e);
+      // Touch screens have noisy pointer events: be lenient on movement and
+      // hold time so genuine taps are not mis-classified as drags.
+      if (dx * dx + dy * dy < 144 && dt < 700) this._handleClick(e);
     });
   }
 
@@ -420,16 +422,37 @@ export class SolarSystem {
 
     const targets = [];
     for (const entry of this.bodies.values()) targets.push(entry.object3D);
-    targets.push(...[...this.bodies.values()].filter(b => b.data.id === 'sun').map(b => b.mesh));
     const hits = this.raycaster.intersectObjects(targets, true);
     if (hits.length) {
-      // walk up to find a mesh with bodyId
       let obj = hits[0].object;
       while (obj && !obj.userData.bodyId) obj = obj.parent;
       if (obj && obj.userData.bodyId) {
         this._dispatchSelect(obj.userData.bodyId);
+        return;
       }
     }
+
+    // Proximity fallback: select whichever body's centre is closest to the
+    // tap ray within a generous angular tolerance. Lets the user grab tiny
+    // dwarf planets without having to hit them pixel-perfectly.
+    let best = null;
+    let bestScore = Infinity;
+    const tmp = new THREE.Vector3();
+    for (const [id, entry] of this.bodies) {
+      entry.object3D.getWorldPosition(tmp);
+      // Distance from world point to ray
+      const d = this.raycaster.ray.distanceToPoint(tmp);
+      const camDist = tmp.distanceTo(this.camera.position);
+      const radius = (entry.radius || SUN_RENDER_RADIUS) * (entry.object3D.scale.x || 1);
+      // Angular miss: compare miss distance to body radius, weighted so far-away
+      // bodies still need to be roughly under the tap.
+      const angularMiss = d / (radius + camDist * 0.04);
+      if (angularMiss < 1.0 && angularMiss < bestScore) {
+        bestScore = angularMiss;
+        best = id;
+      }
+    }
+    if (best) this._dispatchSelect(best);
   }
 
   onSelect(cb) { this._onSelectCb = cb; }
@@ -447,12 +470,16 @@ export class SolarSystem {
     const target = new THREE.Vector3();
     entry.object3D.getWorldPosition(target);
     const radius = (entry.radius || SUN_RENDER_RADIUS) * (entry.object3D.scale.x || 1);
-    // Closer offset so dwarfs / moons fill the view
-    const offset = new THREE.Vector3(0, radius * 1.2, radius * 3.5);
+    // Frame the body so it nearly fills the viewport (~50° angular size).
+    // Distance ≈ 2.2 × radius, with a small upward tilt for a 3/4 view.
+    const offset = new THREE.Vector3(0, radius * 0.6, radius * 2.2);
     const camTarget = target.clone().add(offset);
-    this._tweenCamera(camTarget, target);
-    // Lock on so the camera follows the body around its orbit
+    // Disable orbit controls while we tween so user input doesn't fight it.
+    this.controls.enabled = false;
     this.followTarget = entry;
+    this._tweenCamera(camTarget, target, 1.0, () => {
+      this.controls.enabled = true;
+    });
   }
 
   releaseFollow() { this.followTarget = null; }
