@@ -39,10 +39,10 @@ export class SolarSystem {
     this._initRenderer();
     this._initScene();
     this._initLights();
+    this._initLabels();
     this._buildSystem();
     this._initControls();
     this._initRaycaster();
-    this._initLabels();
 
     window.addEventListener('resize', () => this._onResize());
     this._onResize();
